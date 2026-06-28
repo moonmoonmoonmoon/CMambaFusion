@@ -1,0 +1,109 @@
+DATASET: 'MyDataset'
+DATA_PATH: '../data/my_data'
+
+POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]
+
+DATA_SPLIT: {
+    'train': train,
+    'test': val
+}
+
+INFO_PATH: {
+    'train': [my_infos_train.pkl],
+    'test': [my_infos_val.pkl],
+}
+
+GET_ITEM_LIST: ["points"]
+DATA_COMPOSITION: ["pcd"]
+FOV_POINTS_ONLY: True
+
+GT_NAME_REMAP: {
+  'Vehicle':'Vehicle',
+  'CAR': 'Vehicle', 
+  'Car': 'Vehicle', 
+  'VAN': 'Vehicle',
+  'Van': 'Vehicle',
+  'MINI_TRUCK': 'Vehicle',
+  'TINY_CAR': 'Vehicle',
+  'Bigcar':'Bigcar',
+  'BUS': 'Bigcar',
+  'Bus': 'Bigcar',
+  'TRUCK': 'Bigcar',
+  'Truck': 'Bigcar',
+  'FLATBED_TRUCK': 'Bigcar',
+  'DUMP_TRUCK': 'Bigcar',
+  'SEMI_TRUCK': 'Bigcar',
+  'CONSTRUCTION_TRUCK': 'Bigcar',
+  'SPECIAL_VEHICLE': 'Bigcar',
+  'Special_ vehicles': 'Bigcar',
+  'Cyclist':'Cyclist',
+  'BICYCLE': 'Cyclist',
+  'Bicycle': 'Cyclist',
+  'Cycle': 'Cyclist',
+  'MOTORCYCLE': 'Cyclist',
+  'TRICYCLE': 'Cyclist',
+  'Tricyclist': 'Tricyclist',
+  'Pedestrian': 'Pedestrian',
+  'PED_ADULT': 'Pedestrian',
+  'PED_CHILD': 'Pedestrian',
+  'BABY_CARRIAGE': 'Pedestrian',
+  'ANIMAL': 'unknown',
+  'Semitrailer': 'others',
+  'CONE': 'others',
+  'POLE': 'others',
+  'Animal': 'others',
+  'BARRIER': 'others',
+  'UNKNOWN': 'unknown',
+  'DONT_CARE': 'unknown',
+}
+
+# DATA_AUGMENTOR:
+#     DISABLE_AUG_LIST: ['placeholder']
+#     AUG_CONFIG_LIST:
+#         - NAME: gt_sampling
+#           USE_ROAD_PLANE: True
+#           DB_INFO_PATH:
+#               - wata_dbinfos_train.pkl
+#           PREPARE: {
+#              filter_by_min_points: ['Vehicle:5', 'Pedestrian:5', 'Cyclist:5'],
+#              filter_by_difficulty: [-1],
+#           }
+
+#           SAMPLE_GROUPS: ['Vehicle:20','Pedestrian:15', 'Cyclist:15']
+#           NUM_POINT_FEATURES: 3
+#           DATABASE_WITH_FAKELIDAR: False
+#           REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+#           LIMIT_WHOLE_SCENE: True
+
+#         - NAME: random_world_flip
+#           ALONG_AXIS_LIST: ['x']
+
+#         - NAME: random_world_rotation
+#           WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+#         - NAME: random_world_scaling
+#           WORLD_SCALE_RANGE: [0.95, 1.05]
+
+POINT_FEATURE_ENCODING: {
+    encoding_type: absolute_coordinates_encoding,
+    used_feature_list: ['x', 'y', 'z', 'intensity'],
+    src_feature_list: ['x', 'y', 'z','intensity'],
+}
+
+DATA_PROCESSOR:
+    - NAME: mask_points_and_boxes_outside_range
+      REMOVE_OUTSIDE_BOXES: True
+
+    - NAME: shuffle_points
+      SHUFFLE_ENABLED: {
+        'train': True,
+        'test': False
+      }
+
+    - NAME: transform_points_to_voxels
+      VOXEL_SIZE: [0.05, 0.05, 0.1]
+      MAX_POINTS_PER_VOXEL: 5
+      MAX_NUMBER_OF_VOXELS: {
+        'train': 16000,
+        'test': 40000
+      }

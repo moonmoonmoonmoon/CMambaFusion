@@ -1,0 +1,6 @@
+# ninja log v5
+1	15701	1771391110015388198	/home/yanan/Downloads/projects/multimodal_detection/third_party/mamba/selective_scan/build/temp.linux-x86_64-cpython-38/csrc/selective_scan/selective_scan_core_fwd2.o	6d17e89919a70dd4
+0	17823	1771391112131427282	/home/yanan/Downloads/projects/multimodal_detection/third_party/mamba/selective_scan/build/temp.linux-x86_64-cpython-38/csrc/selective_scan/selective_scan.o	7b7a0b4eaae3990f
+1	20539	1771391114847477456	/home/yanan/Downloads/projects/multimodal_detection/third_party/mamba/selective_scan/build/temp.linux-x86_64-cpython-38/csrc/selective_scan/selective_scan_core_fwd3.o	c9a427ea63881c15
+1	25574	1771391119871570287	/home/yanan/Downloads/projects/multimodal_detection/third_party/mamba/selective_scan/build/temp.linux-x86_64-cpython-38/csrc/selective_scan/selective_scan_core_fwd4.o	ef59676daf58568
+0	41606	1771391135895866551	/home/yanan/Downloads/projects/multimodal_detection/third_party/mamba/selective_scan/build/temp.linux-x86_64-cpython-38/csrc/selective_scan/selective_scan_core.o	503f73bfd2f3fb9e

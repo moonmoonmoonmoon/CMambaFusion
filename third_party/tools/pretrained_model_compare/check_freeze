@@ -1,0 +1,1 @@
+load_param.txt: pointpillar_baseline only: 加载完预训练模型后的模型还没开始训练的参数，不冻结dense head，所以只有dense head的参数权重不同，block和deblock的BN的run mean run var等不同

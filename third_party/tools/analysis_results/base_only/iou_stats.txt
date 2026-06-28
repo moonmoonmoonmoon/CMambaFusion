@@ -1,0 +1,51 @@
+IoU 统计
+============================================================
+
+Car:
+  Count:  261
+  Mean:   0.7422
+  Median: 0.7326
+  Std:    0.0308
+  Min:    0.7001
+  Max:    0.8608
+
+Pedestrian:
+  Count:  16
+  Mean:   0.5834
+  Median: 0.5706
+  Std:    0.0497
+  Min:    0.5179
+  Max:    0.7066
+
+Bus:
+  Count:  9
+  Mean:   0.6539
+  Median: 0.6365
+  Std:    0.0947
+  Min:    0.5435
+  Max:    0.8143
+
+PickupTruck:
+  Count:  40
+  Mean:   0.7538
+  Median: 0.7495
+  Std:    0.0396
+  Min:    0.7015
+  Max:    0.8658
+
+MediumTruck:
+  Count:  6
+  Mean:   0.7673
+  Median: 0.7723
+  Std:    0.0412
+  Min:    0.7002
+  Max:    0.8150
+
+SemiTruck:
+  Count:  1
+  Mean:   0.7312
+  Median: 0.7312
+  Std:    0.0000
+  Min:    0.7312
+  Max:    0.7312
+

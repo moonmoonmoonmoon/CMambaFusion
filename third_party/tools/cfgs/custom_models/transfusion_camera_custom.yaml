@@ -1,0 +1,198 @@
+#CLASS_NAMES: ['Car', 'Pedestrian', 'Bus', 'PickupTruck', 'MediumTruck', 'SemiTruck',
+   #           'TowedObject', 'Cyclist', 'Scooter', 'Train', 'Motorcycle']
+CLASS_NAMES: ['Car']
+
+DATA_CONFIG:
+    _BASE_CONFIG_: cfgs/dataset_configs/custom_dataset.yaml
+    POINT_CLOUD_RANGE: [-51.2, -60, -3, 51.2, 40.8, 5]
+
+    ENABLE_MULTIMODAL: True
+
+    IMAGE_CONFIG:
+        IMAGE_ROOT: '/home/yanan/Downloads/projects/multimodal_detection/data/Bus'
+        IMAGE_SUBDIR: 'train/images'
+        IMG_SIZE: [128, 1024]
+        # OS1-128 任意一个录制的 metadata，用于加载 beam_altitude_angles
+        METADATA_PATH: '/media/yanan/MA2023-2/Ouster_LiDAR/2025_bus_all/30_01/Left/20250124_1250_OS-1-128_122211001778.json'
+
+    ABLATION_CONFIG:
+        USE_POINT_CLOUD_AUG: False   # 多模态训练关闭增强
+        USE_IMAGE_AUG: False
+
+    DATA_PROCESSOR:
+        - NAME: mask_points_and_boxes_outside_range
+          REMOVE_OUTSIDE_BOXES: True
+
+        - NAME: shuffle_points
+          SHUFFLE_ENABLED: {
+            'train': True,
+            'test': False
+          }
+
+        - NAME: transform_points_to_voxels
+          VOXEL_SIZE: [0.1, 0.1, 0.2]   # 与 SECOND/CenterPoint 一致
+          MAX_POINTS_PER_VOXEL: 5
+          MAX_NUMBER_OF_VOXELS: {
+            'train': 80000,
+            'test': 90000
+          }
+
+    # ⚠️ 不做数据增强（关闭 gt_sampling / flip / rotation / scaling）
+    DATA_AUGMENTOR:
+        DISABLE_AUG_LIST: ['gt_sampling', 'random_world_flip',
+                           'random_world_rotation', 'random_world_scaling']
+        AUG_CONFIG_LIST:
+            - NAME: gt_sampling
+              USE_ROAD_PLANE: False
+              DB_INFO_PATH:
+                  - custom_dbinfos_train.pkl
+              PREPARE: {
+                  filter_by_min_points: ['Car:5'],
+                  filter_by_difficulty: [-1],
+              }
+              SAMPLE_GROUPS: ['Car:0']   # 占位，实际被禁用
+              NUM_POINT_FEATURES: 4
+              DATABASE_WITH_FAKELIDAR: False
+              REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+              LIMIT_WHOLE_SCENE: False
+
+MODEL:
+    NAME: TransFusionCamera   # pcdet/models/detectors/transfusion_camera.py
+
+    # ── YOLOv8 图像 backbone 配置 ──────────────────────────────
+    YOLO_CONFIG:
+        MODEL_PATH: '/home/yanan/Downloads/projects/multimodal_detection/config/customed_yolov8s.yaml'
+        PRETRAINED_WEIGHTS: null   # 通过 --pretrained_yolo 指定
+        FREEZE_WEIGHTS: False
+
+    ENABLE_MULTIMODAL_FUSION: True
+
+    # ── LiDAR backbone（与 SECOND/CenterPoint 保持一致）────────
+    VFE:
+        NAME: MeanVFE
+
+    BACKBONE_3D:
+        NAME: VoxelResBackBone8x
+
+    MAP_TO_BEV:
+        NAME: HeightCompression
+        NUM_BEV_FEATURES: 256
+
+    BACKBONE_2D:
+        NAME: BaseBEVBackbone
+        LAYER_NUMS: [5, 5]
+        LAYER_STRIDES: [1, 2]
+        NUM_FILTERS: [128, 256]
+        UPSAMPLE_STRIDES: [1, 2]
+        NUM_UPSAMPLE_FILTERS: [256, 256]
+        USE_CONV_FOR_NO_STRIDE: True
+
+    # ── TransFusion 检测头 ────────────────────────────────────
+    DENSE_HEAD:
+        NAME: TransFusionHead
+        CLASS_AGNOSTIC: False
+
+        # 图像融合开关
+        FUSE_IMG: False
+        NUM_VIEWS: 1                # Ouster 只有一张 360° 图像
+        IN_CHANNELS_IMG: 256        # YOLOv8 P4 通道数
+        OUT_SIZE_FACTOR_IMG: 16     # YOLOv8 P4 stride
+
+        NUM_PROPOSALS: 200
+        HIDDEN_CHANNEL: 128
+        #NUM_CLASSES: 11
+        NUM_CLASSES: 1
+        NUM_HEADS: 8
+        NMS_KERNEL_SIZE: 3
+        
+        NUM_HM_CONV: 2
+        METADATA_PATH: '/media/yanan/MA2023-2/Ouster_LiDAR/2025_bus_all/30_01/Left/20250124_1250_OS-1-128_122211001778.json'
+
+        # 是否用热力图初始化 query（推荐 True）
+        INITIALIZE_BY_HEATMAP: True
+        LEARNABLE_QUERY_POS: False
+
+        FFN_CHANNEL: 256
+        DROPOUT: 0.1
+        BN_MOMENTUM: 0.1
+        ACTIVATION: relu
+
+        NUM_DECODER_LAYERS: 1       # LiDAR decoder 层数（+1层图像融合）
+        AUXILIARY: True             # 辅助监督
+
+        NUM_HEATMAP_CONVS: 2
+
+        SEPARATE_HEAD_CFG:
+            HEAD_ORDER: ['center', 'height', 'dim', 'rot']
+            HEAD_DICT: {
+                'center': {'out_channels': 2, 'num_conv': 2},
+                'height': {'out_channels': 1, 'num_conv': 2},
+                'dim':    {'out_channels': 3, 'num_conv': 2},
+                'rot':    {'out_channels': 2, 'num_conv': 2},
+                # 注意：没有 vel（PALIN 数据集不含速度）
+            }
+
+        TARGET_ASSIGNER_CONFIG:
+            DATASET: custom      # ← 加这一行
+            FEATURE_MAP_STRIDE: 8      # VoxelResBackBone8x（8x） + BEV backbone 净步幅8
+            NUM_MAX_OBJS: 500
+            GAUSSIAN_OVERLAP: 0.1
+            MIN_RADIUS: 2
+            HUNGARIAN_ASSIGNER:
+                cls_cost:  {'gamma': 2.0, 'alpha': 0.25, 'weight': 0.15}
+                reg_cost:  {'weight': 0.25}
+                iou_cost:  {'weight': 0.25}
+
+        LOSS_CONFIG:
+            LOSS_WEIGHTS: {
+                'cls_weight':      1.0,
+                'bbox_weight':     0.25,
+                'hm_weight':       1.0,
+                'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            }
+            LOSS_CLS:
+                use_sigmoid: True
+                gamma: 2.0
+                alpha: 0.25
+
+        # TransFusion 在 dense_head 内部做 NMS
+        POST_PROCESSING:
+            SCORE_THRESH: 0.0
+            POST_CENTER_RANGE: [-51.2, -60, -3, 51.2, 40.8, 5]
+            MAX_OBJ_PER_SAMPLE: 500
+            NMS_CONFIG:
+                NMS_TYPE: nms_gpu
+                NMS_THRESH: 0.00
+                NMS_PRE_MAXSIZE: 4096
+                NMS_POST_MAXSIZE: 500
+
+    POST_PROCESSING:
+        RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
+        SCORE_THRESH: 0.1
+        OUTPUT_RAW_SCORE: False
+        EVAL_METRIC: kitti
+
+        NMS_CONFIG:
+            MULTI_CLASSES_NMS: False
+            NMS_TYPE: nms_gpu
+            NMS_THRESH: 0.01
+            NMS_PRE_MAXSIZE: 4096
+            NMS_POST_MAXSIZE: 500
+
+
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 2      # TransFusion 显存占用比 PointPillar 大，先用2
+    NUM_EPOCHS: 80
+    OPTIMIZER: adam_onecycle
+    LR: 0.001                  # TransFusion 通常用更小的 LR
+    WEIGHT_DECAY: 0.01
+    MOMENTUM: 0.9
+    MOMS: [0.95, 0.85]
+    PCT_START: 0.4
+    DIV_FACTOR: 10
+    DECAY_STEP_LIST: [35, 45]
+    LR_DECAY: 0.1
+    LR_CLIP: 0.0000001
+    LR_WARMUP: False
+    WARMUP_EPOCH: 1
+    GRAD_NORM_CLIP: 35         # TransFusion 官方用 35

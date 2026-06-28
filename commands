@@ -1,0 +1,101 @@
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --extra_tag 2025_1117_02_no_image_aug_residual_concat --epochs 80 --ablation_mode no_image_aug
+python -m pcdet.datasets.custom.custom_dataset create_custom_infos tools/cfgs/dataset_configs/custom_dataset.yaml
+
+
+
+
+python test.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/checkpoint_epoch_100.pth   --set MODEL.ENABLE_MULTIMODAL_FUSION False DATA_CONFIG.ENABLE_MULTIMODAL False
+
+
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/results/models_copy/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/checkpoint_epoch_100.pth --freeze_yolo --freeze_pointpillar --ablation_mode baseline_only --extra_tag xxx --epochs xxx
+(checkpoint_epoch_100.pth is pointpillars' best map model from /home/yanan/Downloads/projects/cug_multimodal_3d_detection/output/cfgs/custom_models/pointpillar/base_pointpillar_point_aug/2025_08_23_pointpillars_baseline_only_run_4/ckpt/checkpoint_epoch_100.th)
+
+python train.py --cfg_file cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/results/models_copy/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/cug_multimodal_3d_detection/output/cfgs/custom_models/pointpillar/base_pointpillar_point_aug/2025_08_23_pointpillars_baseline_only_run_4/ckpt/checkpoint_epoch_100.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --fix_random_seed --extra_tag exp3_crossattn_learnable_residual --epochs 80
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --batch_size 4 --epochs 80  --extra_tag random_noise_ablation --use_random_noise --ablation_mode full --fix_random_seed
+python ouster_images.py --combined --apply_contrast --output ./output/images/output_combined_images/31_01
+
+
+python train.py --cfg_file ./cfgs/custom_mode
+ls/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5827_05/ckpt/checkpoint_epoch_80.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_5827_01 --epochs 80
+
+
+python train.py --cfg_file ./cfgs/custom_mode
+ls/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s_10_category/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5827_01/ckpt/checkpoint_epoch_80.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_5827 --epochs 1
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --ablation_mode baseline_only --extra_tag base_01_620 --epochs 80
+
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/results/models_copy/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_620/ckpt/checkpoint_epoch_100.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_620 --epochs 80
+
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/results/models_copy/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_620/ckpt/checkpoint_epoch_100.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag random_noise_fusion_01_620 --epochs 80 --use_random_noise
+
+python visualize_boxes.py bus_30_01_pcd_out_000251 ../../data/custom
+
+python detailed_evaluation.py --ckpt ../../output/cfgs/custom_models/pointpillar/5828/evaluate_last/fusion_01_5827_01/ckpt/checkpoint_epoch_80.pth --cfg_file ./cfgs/custom_models/pointpillar.yaml --output_dir ../../output/analysis_results/fusion
+
+
+#运行test或demo的时候，先把pointpillar(1处)的yaml文件里的train改为test和custom_data(2处)的yaml文件里的val改为test
+#python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/test_data   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/4d_concat_mamba_fusion_01_5828_01/ckpt/checkpoint_epoch_74.pth   --ext .bin
+运行test或demo的时候，先把custom_data(2处)的yaml文件里的val改为test
+python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/test_data   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/4d_concat_mamba_fusion_01_5828_01/ckpt/checkpoint_epoch_74.pth   --ext .bin
+
+先把pointpillar(2处)的yaml文件里的ENABLE_MULTIMODAL的True改为False
+python test.py   --cfg_file ./cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5828_02/ckpt/checkpoint_epoch_74.pth   --batch_size 4   --workers 4   --extra_tag test_final_base
+
+先把pointpillar(2处)的yaml文件里的ENABLE_MULTIMODAL的False改为True,再在fusion module文件里选择cross attention的代码部分，取消注释
+python test.py   --cfg_file ./cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/fusion_01_5828_02/ckpt/checkpoint_epoch_80.pth   --batch_size 4   --workers 4   --extra_tag test_final_cross_attention
+
+
+python test.py   --cfg_file ./cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/4d_mamba_fusion_01_5828_01/ckpt/checkpoint_epoch_80.pth   --batch_size 4   --workers 4   --extra_tag test_final_cross_mamba_80
+
+
+python test.py   --cfg_file ./cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/4d_concat_mamba_fusion_01_5828_01/ckpt/checkpoint_epoch_74.pth   --batch_size 4   --workers 4   --extra_tag test_final_cross_mamba_concat_mamba_74
+
+python ouster_images.py --combined --apply_contrast --output ./output_frames/images
+
+
+# didn't use pretrained pointpillar, because the pretrained path is wrong:ckpt-->cpkt
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5828_02/cpkt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_5828_02 --epochs 80 --num_epochs_to_eval 7
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5828_02/cpkt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag 4d_mamba_fusion_01_5828_01 --epochs 80  --num_epochs_to_eval 7 
+
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5828_02/cpkt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag 4d_concat_mamba_fusion_01_5828_01 --epochs 80  --num_epochs_to_eval 7 
+
+# didn't use pretrained pointpillar, because the pretrained path is wrong:ckpt-->cpkt
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_6264_01/cpkt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_6264_01 --epochs 80 --num_epochs_to_eval 7
+
+#even use base_01_5828_02/cpkt,not base_01_6264_01/cpkt, not ckpt
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_5828_02/cpkt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag 4d_mamba_fusion_01_6264_01_share_AD --epochs 80  --num_epochs_to_eval 7 
+
+#so retrain cross attention, use base_01_6264_01/ckpt
+python train.py --cfg_file ./cfgs/custom_models/pointpillar.yaml --pretrained_yolo /home/yanan/Downloads/projects/course_projects/ultralytics_part/models/yolov8_s/weights/best.pt --pretrained_pointpillar /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/base_01_6264_01/ckpt/checkpoint_epoch_74.pth --freeze_yolo --freeze_pointpillar --ablation_mode full --extra_tag fusion_01_6264_01 --epochs 80  --num_epochs_to_eval 7 
+
+# set SCORE_THRESH: 0.7 in pointpillar.yaml
+python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/testing/data/bus_30_03_pcd_out_004306.bin --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/4d_concat_mamba_fusion_01_6264_01_share_AD/ckpt/checkpoint_epoch_78.pth   --ext .bin
+
+
+python ouster_images.py --combined --apply_contrast --output ./output_frames/images
+
+python ./tools/save_beam_angles.py --metadata /media/yanan/MA2023-2/Ouster_LiDAR/2025_bus_all/30_01/Left/20250124_1250_OS-1-128_122211001778.json  --output ../data/beam_altitude_angles_bus.npy
+python ./tools/save_beam_angles.py --metadata /media/yanan/MA2023-2/Ouster_LiDAR/Boston/raw_data/scence_1/OS-1-128_122426001161_1024x20_20250918_074251312008.json --output ../data/beam_altitude_angles_boston.npy
+
+ python save_pr_data.py   --cfg ./cfgs/custom_models/pointpillar.yaml   --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/4d_mamba_fusion_01_6264_01_share_AD/ckpt/checkpoint_epoch_74.pth   --save_name 4d_cross_mamba   --class_name Car --iou_thresh 0.7
+
+python plot_pr.py   --pkls pr_pointpillars.pkl pr_bi-cross_attention.pkl pr_4d_cross_mamba.pkl pr_cmamba.pkl   --names "PointPillars" "Bi-Cross-Attn" "4-Dir Cross-Mamba" "CMambaFusion"   --output pr_car_07.png
+ python plot_pr.py   --pkls pr_pp_car.pkl pr_bi-cross_attention_car.pkl pr_4d_cross_mamba_car.pkl pr_cmamba_car.pkl pr_pp_pedestrian.pkl pr_bi-cross_attention_pedestrian.pkl pr_4d_cross_mamba_pedestrian.pkl pr_cmamba_pedestrian.pkl pr_pp_pickuptruck.pkl pr_bi-cross_attention_pickuptruck.pkl pr_4d_cross_mamba_pickuptruck.pkl pr_cmamba_pickuptruck.pkl pr_pp_cyclist.pkl pr_bi-cross_attention_cyclist.pkl pr_4d_cross_mamba_cyclist.pkl pr_cmamba_cyclist.pkl pr_pp_scooter.pkl pr_bi-cross_attention_scooter.pkl pr_4d_cross_mamba_scooter.pkl pr_cmamba_scooter.pkl pr_pp_bus.pkl pr_bi-cross_attention_bus.pkl pr_4d_cross_mamba_bus.pkl pr_cmamba_bus.pkl  pr_pp_mediumtruck.pkl pr_bi-cross_attention_mediumtruck.pkl pr_4d_cross_mamba_mediumtruck.pkl pr_cmamba_mediumtruck.pkl  pr_pp_train.pkl pr_bi-cross_attention_train.pkl pr_4d_cross_mamba_train.pkl pr_cmamba_train.pkl  --names "PointPillars" "Bi-Cross-Attn" "4-Dir Cross-Mamba" "CMambaFusion"   --output all_pr_curve.png
+ 
+  python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/testing/data/boston_01_pcd_out_022680.bin --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/ablation/diff_gate_4d_concat_mamba_fusion_01_6264_01_share_AD/ckpt/checkpoint_epoch_74.pth   --ext .bin
+
+ python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/testing/data/boston_01_pcd_out_022680.bin --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/base_01_6264_01/ckpt/checkpoint_epoch_74.pth   --ext .bin
+
+
+ python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/testing/data/bus_30_03_pcd_out_004881.bin --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/base_01_6264_01/ckpt/checkpoint_epoch_74.pth   --ext .bin
+
+ python demo.py   --cfg_file /home/yanan/Downloads/projects/multimodal_detection/third_party/tools/cfgs/custom_models/pointpillar.yaml   --data_path /home/yanan/Downloads/projects/multimodal_detection/data/custom/testing/data/bus_30_03_pcd_out_004881.bin --ckpt /home/yanan/Downloads/projects/multimodal_detection/output/cfgs/custom_models/pointpillar/6264_no_pretrain_pointpillar/ablation/diff_gate_4d_concat_mamba_fusion_01_6264_01_share_AD/ckpt/checkpoint_epoch_74.pth   --ext .bin
+
+
+
+

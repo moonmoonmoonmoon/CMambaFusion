@@ -1,0 +1,13 @@
+# Confusion Matrix (rows=GT, cols=Pred)
+# Classes: Background, Car, Pedestrian, Bus, PickupTruck, MediumTruck, SemiTruck, TowedObject, Cyclist, Bicycle, Motorcycle
+0 1676 80 5 118 25 9 6 0 0 0
+1050 261 0 0 0 0 0 0 0 0 0
+22 0 16 0 0 0 0 0 0 0 0
+0 0 0 9 0 0 0 0 0 0 0
+65 0 0 0 40 0 0 0 0 0 0
+20 0 0 0 0 6 0 0 0 0 0
+5 0 0 0 0 0 1 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0

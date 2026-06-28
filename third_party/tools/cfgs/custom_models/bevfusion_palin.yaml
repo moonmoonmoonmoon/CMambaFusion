@@ -1,0 +1,250 @@
+# =====================================================================
+# BevFusion† (PALIN-BevFusion)
+# BevFusion在PALIN数据集上的适配版，论文对比实验用
+#
+# LiDAR分支：与原版BevFusion完全相同
+#   MeanVFE → VoxelResBackBone8x → HeightCompression
+#
+# Camera分支：Ouster球面投影替换针孔相机LSS
+#   YOLOv8-S → OusterLSSTransform (spherical LSS)
+#
+# 融合：与原版BevFusion相同
+#   ConvFuserBEV([256+80] → 256ch) → BaseBEVBackbone → AnchorHeadSingle
+#
+# Voxel size [0.1, 0.1, 0.2]：与SECOND/CenterPoint基线一致
+#
+# BEV尺寸（自动推导）：
+#   X: (51.2+51.2) / (0.1×8) = 128 cells
+#   Y: (60.0+40.8) / (0.1×8) = 126 cells
+# =====================================================================
+
+CLASS_NAMES: ['Car', 'Pedestrian', 'Bus', 'PickupTruck', 'MediumTruck',
+              'SemiTruck', 'TowedObject', 'Cyclist', 'Scooter', 'Train', 'Motorcycle']
+
+DATA_CONFIG:
+    _BASE_CONFIG_: cfgs/dataset_configs/custom_dataset.yaml
+    POINT_CLOUD_RANGE: [-51.2, -60, -3, 51.2, 40.8, 5]
+
+    ENABLE_MULTIMODAL: True
+    IMAGE_CONFIG:
+        IMAGE_ROOT: '/home/yanan/Downloads/projects/multimodal_detection/data/Bus'
+        IMAGE_SUBDIR: 'train/images'
+        IMG_SIZE: [128, 1024]
+
+    DATA_PROCESSOR:
+        - NAME: mask_points_and_boxes_outside_range
+          REMOVE_OUTSIDE_BOXES: True
+
+        - NAME: shuffle_points
+          SHUFFLE_ENABLED: {
+            'train': True,
+            'test': False
+          }
+
+        - NAME: transform_points_to_voxels
+          VOXEL_SIZE: [0.1, 0.1, 0.2]       # 与SECOND/CenterPoint一致，公平对比
+          MAX_POINTS_PER_VOXEL: 5
+          MAX_NUMBER_OF_VOXELS: {
+            'train': 120000,
+            'test': 160000
+          }
+
+    DATA_AUGMENTOR:
+        DISABLE_AUG_LIST: ['placeholder']
+        AUG_CONFIG_LIST:
+            - NAME: gt_sampling
+              USE_ROAD_PLANE: False
+              DB_INFO_PATH:
+                  - custom_dbinfos_train.pkl
+              PREPARE: {
+                  filter_by_min_points: [
+                      'Car:5', 'Pedestrian:1', 'Bus:5', 'PickupTruck:5',
+                      'MediumTruck:5', 'SemiTruck:5', 'TowedObject:5',
+                      'Cyclist:3', 'Scooter:3', 'Train:5', 'Motorcycle:3',
+                  ],
+                  filter_by_difficulty: [-1],
+              }
+              SAMPLE_GROUPS: [
+                  'Car:15', 'Pedestrian:10', 'Bus:10', 'PickupTruck:10',
+                  'MediumTruck:10', 'SemiTruck:5', 'TowedObject:5',
+                  'Cyclist:10', 'Scooter:5', 'Train:5', 'Motorcycle:3',
+              ]
+              NUM_POINT_FEATURES: 4
+              DATABASE_WITH_FAKELIDAR: False
+              REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
+              LIMIT_WHOLE_SCENE: False
+
+            - NAME: random_world_flip
+              ALONG_AXIS_LIST: ['x']
+
+            - NAME: random_world_rotation
+              WORLD_ROT_ANGLE: [-0.78539816, 0.78539816]
+
+            - NAME: random_world_scaling
+              WORLD_SCALE_RANGE: [0.95, 1.05]
+
+
+MODEL:
+    NAME: BevFusionPALIN
+
+    # =========================================================
+    # LiDAR分支（与原版BevFusion完全相同）
+    # =========================================================
+    VFE:
+        NAME: MeanVFE              # 原版BevFusion用MeanVFE（非PillarVFE）
+
+    BACKBONE_3D:
+        NAME: VoxelResBackBone8x   # 原版BevFusion核心：3D稀疏卷积，stride=8
+        USE_BIAS: False
+
+    MAP_TO_BEV:
+        NAME: HeightCompression    # 压缩Z轴，输出 (B, 256, 126, 128)
+        NUM_BEV_FEATURES: 256
+
+    # =========================================================
+    # Camera分支：YOLOv8 + OusterLSS（替换原版SwinTransformer+DepthLSS）
+    # =========================================================
+    ENABLE_MULTIMODAL_FUSION: True
+
+    YOLO_CONFIG:
+        MODEL_PATH: '/home/yanan/Downloads/projects/multimodal_detection/config/customed_yolov8s.yaml'
+        PRETRAINED_WEIGHTS: null
+        FREEZE_WEIGHTS: False
+
+    LSS_CONFIG:
+        IMG_SIZE: [128, 1024]          # Ouster Near-IR图像尺寸 [H, W]
+        FEAT_STRIDE: 8                 # YOLOv8-S P3步长（特征图为16×128）
+        #SHIFT_DEGREES: 180.0           # Bus子集=180.0，Boston子集=90.0
+                                       # 混合数据集需用OusterLSSTransformDual
+        #BEAM_ALTITUDE_ANGLES_PATH: '/home/yanan/Downloads/projects/multimodal_detection/data/beam_altitude_angles.npy'
+        BEAM_ALTITUDE_ANGLES_PATH_BUS: '/home/yanan/Downloads/projects/multimodal_detection/data/beam_altitude_angles_bus.npy'
+        BEAM_ALTITUDE_ANGLES_PATH_BOSTON: '/home/yanan/Downloads/projects/multimodal_detection/data/beam_altitude_angles_boston.npy'
+        BEV_RANGE: [-51.2, -60.0, 51.2, 40.8]   # [x_min, y_min, x_max, y_max]
+        BEV_RES: 0.8                   # voxel_size(0.1) × VoxelResBackBone8x_stride(8)
+        DEPTH_RANGE: [1.0, 52.2, 1.0]  # [d_min, d_max, d_step]，单位m，D=51个bin
+        IN_CHANNELS: 128               # YOLOv8-S P3输出通道
+        OUT_CHANNELS: 80               # LSS输出BEV通道（与原版BevFusion一致）
+
+    # =========================================================
+    # ConvFuserBEV（与原版BevFusion结构完全一致）
+    # =========================================================
+    FUSER_CONFIG:
+        LIDAR_CHANNELS: 256            # HeightCompression输出通道
+        CAMERA_CHANNELS: 80            # OusterLSS输出通道
+        OUT_CHANNELS: 256              # 融合输出 = BaseBEVBackbone输入
+
+    # =========================================================
+    # 2D BEV Backbone（原版BevFusion配置）
+    # =========================================================
+    BACKBONE_2D:
+        NAME: BaseBEVBackbone
+        LAYER_NUMS: [5, 5]
+        LAYER_STRIDES: [1, 2]
+        NUM_FILTERS: [128, 256]
+        UPSAMPLE_STRIDES: [1, 2]
+        NUM_UPSAMPLE_FILTERS: [256, 256]
+        # 输出: 256+256 = 512ch → AnchorHeadSingle输入
+
+    # =========================================================
+    # 检测头（与CMambaFusion相同，保证公平对比）
+    # =========================================================
+    DENSE_HEAD:
+        CLASS_AGNOSTIC: False
+        NAME: TransFusionHead
+
+        USE_BIAS_BEFORE_NORM: False
+
+        NUM_PROPOSALS: 200
+        HIDDEN_CHANNEL: 128
+        NUM_CLASSES: 11
+        NUM_HEADS: 8
+        NMS_KERNEL_SIZE: 3
+        FFN_CHANNEL: 256
+        DROPOUT: 0.1
+        BN_MOMENTUM: 0.1
+        ACTIVATION: relu
+
+        NUM_HM_CONV: 2
+        SEPARATE_HEAD_CFG:
+            HEAD_ORDER: ['center', 'height', 'dim', 'rot']
+            HEAD_DICT: {
+                'center': {'out_channels': 2, 'num_conv': 2},
+                'height': {'out_channels': 1, 'num_conv': 2},
+                'dim':    {'out_channels': 3, 'num_conv': 2},
+                'rot':    {'out_channels': 2, 'num_conv': 2},
+            }
+
+        TARGET_ASSIGNER_CONFIG:
+            FEATURE_MAP_STRIDE: 8    # voxel(0.1) × VoxelResBackBone8x(8)
+            DATASET: custom
+            GAUSSIAN_OVERLAP: 0.1
+            MIN_RADIUS: 2
+            HUNGARIAN_ASSIGNER:
+                cls_cost: {'gamma': 2.0, 'alpha': 0.25, 'weight': 0.15}
+                reg_cost: {'weight': 0.25}
+                iou_cost: {'weight': 0.25}
+
+        LOSS_CONFIG:
+            LOSS_WEIGHTS: {
+                'cls_weight': 1.0,
+                'bbox_weight': 0.25,
+                'hm_weight': 1.0,
+                'code_weights': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            }
+            LOSS_CLS:
+                use_sigmoid: True
+                gamma: 2.0
+                alpha: 0.25
+
+        POST_PROCESSING:
+            SCORE_THRESH: 0.004
+            POST_CENTER_RANGE: [-51.2, -60.0, -3.0, 51.2, 40.8, 5.0]
+            
+    POST_PROCESSING:
+        RECALL_THRESH_LIST: [0.3, 0.5, 0.7]
+        SCORE_THRESH: 0.07
+        OUTPUT_RAW_SCORE: False
+        EVAL_METRIC: kitti
+        NMS_CONFIG:
+            MULTI_CLASSES_NMS: False
+            NMS_TYPE: nms_gpu
+            NMS_THRESH: 0.01
+            NMS_PRE_MAXSIZE: 4096
+            NMS_POST_MAXSIZE: 500
+
+
+# 与CMambaFusion完全相同的训练配置（公平对比）
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 4        # 保持你的 batch size
+    NUM_EPOCHS: 80               # 保持 80 epoch 与其他 baseline 一致
+    OPTIMIZER: adam_cosineanneal
+    LR: 0.0001
+    WEIGHT_DECAY: 0.01
+    MOMENTUM: 0.9
+    BETAS: [0.9, 0.999]
+    MOMS: [0.9, 0.8052631]
+    PCT_START: 0.4
+    WARMUP_ITER: 500
+    DECAY_STEP_LIST: [35, 45]    # cosineanneal 不用，保留无害
+    LR_DECAY: 0.1
+    LR_CLIP: 0.0000001
+    LR_WARMUP: False
+    WARMUP_EPOCH: 1
+    GRAD_NORM_CLIP: 35
+    
+#OPTIMIZATION:
+  #  BATCH_SIZE_PER_GPU: 4
+   # NUM_EPOCHS: 80
+    #OPTIMIZER: adam_onecycle
+    #LR: 0.0008
+    #WEIGHT_DECAY: 0.01
+    #MOMENTUM: 0.9
+    #MOMS: [0.95, 0.85]
+    #PCT_START: 0.15
+    #DIV_FACTOR: 8
+    #DECAY_STEP_LIST: [35, 45]
+    #LR_DECAY: 0.1
+    #LR_CLIP: 0.0000001
+    #LR_WARMUP: False
+    #WARMUP_EPOCH: 1
+    #GRAD_NORM_CLIP: 10
