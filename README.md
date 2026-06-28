@@ -53,17 +53,23 @@ The dataset is split into two directories:
 data/
 ├── Bus/
 │   ├── train/
-│   │   └── images/         # NIR image files
-│   └── val/
-│       └── images/
+│   │   ├── images/         # NIR image files
+│   │   └── labels/         # 2D label files
+│   ├── val/
+│   │   ├── images/
+│   │   └── labels/
+│   └── test/
+│       ├── images/
+│       └── labels/
 └── custom/
-    ├── train/
+    ├── ImageSets/
+    │   ├── train.txt
+    │   ├── val.txt
+    │   └── test.txt
+    ├── training/
     │   ├── data/           # .bin LiDAR point cloud files
     │   └── label/          # 3D annotation files
-    ├── val/
-    │   ├── data/
-    │   └── label/
-    └── test/
+    └── testing/
         ├── data/
         └── label/
 ```
